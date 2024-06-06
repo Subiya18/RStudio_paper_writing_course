@@ -15,6 +15,7 @@ getwd()
 # in case you used setwd() in a script (you should not) you can find your Rproject directory with here()
 here::here()
 
+#use getwd and not setwd
 #test, but you should not do this
 setwd("~")
 getwd()
@@ -79,12 +80,13 @@ summary(data_Ashwini)
 
 head(iris)
 vignette("tibble")
+#tibble only have column names
 
 # overwrite gene names ----------------------------------------------------
 
 Gene <- c(rep("Nanog", 15), rep("oct4", 15), rep("sox2", 15),
   rep("Nestin", 15), rep("pax6", 15), rep("Foxg1", 15),
-  rep("GAPDH", 15))
+  rep("GAPDH", 15)) # replicates the name n no. of times
 Gene
 
 data_Ashwini$Gene <- Gene
@@ -93,7 +95,7 @@ head(data_Ashwini)
 # Select only relevant columns and clean up names -------------
 
 data_Ashwini_sel <- data_Ashwini %>%
-  select(1:6) %>%
+  select(1:6) %>% # 1-6 columns were selected and names were cleaned
   janitor::clean_names()
 data_Ashwini_sel
 
@@ -122,8 +124,8 @@ data_Syn_clean <- data_Syn  %>%
   rename_with(~ gsub("_", "-", .x, fixed = TRUE)) %>%
   rename_with(~ gsub("...", "_", .x, fixed = TRUE))
 
-tb_syn <- data_Syn_clean |>
-  pivot_longer(matches("aSyn"), 
+tb_syn <- data_Syn_clean |> # what is |> this?
+  pivot_longer(matches("aSyn"), # separating sample type, replicate number
                names_to = c("chemistry", "sample"), 
                names_sep = "_",
                values_to = "fluorescence")
@@ -144,7 +146,7 @@ plot_syn +
 head(iris)
 iris %>%  
   ggplot(aes(x = Petal.Length, y = Sepal.Width, color = Species)) +
-  geom_boxplot(notch = TRUE) +
+  geom_boxplot(notch = TRUE) + # narrowing of the boxplot around the median
   theme_minimal()
 iris %>%
   ggplot(aes(x = Sepal.Width)) +
@@ -155,8 +157,8 @@ iris %>%
     x = Petal.Length, y = Sepal.Width, 
     color = Species, size = Sepal.Length)
     ) +
-  geom_point() +
-  facet_wrap(~Species)
+  geom_point(alpha= 0.7) +
+  facet_wrap(~Species) #facet_warp divides the image into 3 panels
 
 
 # Plot data - Jose ---------------
@@ -255,7 +257,7 @@ theme_plots <- theme_minimal() +
     legend.text = element_text(size = 10),
     legend.title = element_text(size = 12),
     legend.key.size = unit(7, "mm"),
-    legend.title.position = "top",
+    legend.position = "top",          # change legend.title.position to legend.position
     legend.background = element_rect(color = "grey"),
     plot.title.position = "panel"
   )
@@ -276,12 +278,17 @@ plot_syn <- plot_syn +
   theme_plots
 plot_syn
 
+
+# plot_syn + stat_compare_means (stat_compare_means present in ggplot)
+
+
+
 # Optional - save plots as png---------------
 
 ggsave( "analysis/pictures/plot_Jose1a.png",
   limitsize = FALSE,
   units = c("px"), plot_Jose1,
-  width = 3400, height = 1600
+  width = 3400, height = 1600    # fixing the aspect ratio
   )
 
 # save in a different size
@@ -298,10 +305,14 @@ ggsave(
 
 # Assemble figure with cowplot and patchwork --------------
 
+# New section(Section can be added using shift + control+ R) ---------------------------------------------------------------------
+
 #read images
 
 img1 <- readPNG("analysis/pictures/plot_Jose1a.png")
 img2 <- readPNG("analysis/pictures/plot_Jose1b.png")
+
+# For arranging panels as png. PDF are difficult to rearrange as panels.
 
 #convert to panels
 panel_JoseA <- ggdraw() + draw_image(img1)
@@ -312,31 +323,54 @@ layout <- "
 AB
 CD"
 
+#in this case same image will be placed as a squeare with first and third image above and below and
+# the second image above and below. # can be used to introduce the whitespaces. Alphabet is the image and number of repetition will define its area in the layout.
+# If I run out of alphabets, caplslock and small alphabets can be used.
+
 #assemble multipanel figure based on layout
+
 Figure_Jose <- panel_JoseA + panel_JoseB + plot_Jose1 + plot_Jose2 +
-  plot_layout(design = layout, heights = c(1, 1)) +
+  plot_layout(design = layout, heights = c(1,1)) + # look what heights are
   plot_annotation(tag_levels = 'A') & 
   theme(plot.tag = element_text(size = 12, face='plain'))
+
+Figure_Jose
 
 #save figure as png and pdf
 ggsave(
   "manuscript/figures/Figure_Jose.png", limitsize = FALSE, 
   units = c("px"), Figure_Jose, width = 4000, height = 1600,
   bg = "white"
-  )
+)
 
 ggsave(
   "manuscript/figures/Figure_Jose.pdf", limitsize = FALSE, 
   units = c("px"), Figure_Jose, width = 4000, height = 1600
-  )
+)
 
 image_read("manuscript/figures/Figure_Jose.png")
+
+
+#combine different plots
+Figure_new <- panel_JoseA + panel_JoseB + plot_Ashwini_ct + plot_syn +
+  plot_layout(design = layout, heights = c(0.6,0.4)) + # look what heights are
+  plot_annotation(tag_levels = 'A') & 
+  theme(plot.tag = element_text(size = 12, face='plain'))
+
+#How to change spacing between specific images?
+Figure_new
 
 # Annotating a ggplot object ----------------
 
 plot_syn_ann <- plot_syn +
   annotate("segment", x = 20, xend = 50, y = 1, yend = 1, linewidth = 1)+
   annotate("text", x = 34, y = 300, label = "30 sec", size = 3)
+plot_syn_ann
+
+# To add horizontal or vertical line, try defining segments at x and y axis
+
+plot_syn_ann <- plot_syn +
+  annotate("segment", x = 0, xend = 100, y = 1, yend = 1, linewidth = 1)
 plot_syn_ann
 
 
@@ -394,7 +428,7 @@ image_read("manuscript/figures/Figure_IHC.png")
 
 #read images and make annotated panel
 panel_NOS2d_HCR <- ggdraw() + draw_image(readPNG("analysis/pictures/HCR-IHC_51_AP_NOS_actub_56um.png")) +
-  draw_label("in situ HCR", x = 0.3, y = 0.99, size = 10) +
+  draw_label("in situ HCR", x = 0.3, y = 0.99, size = 10) +  #x=0.5 works, will be in the middle
   draw_label("NOS", x = 0.12, y = 0.9, color="magenta", size = 11, fontface="italic") +
   draw_label("acTub", x = 0.36, y = 0.9, color="green", size = 11, fontface="plain") +
   draw_line(x = c(0.1, 0.46), y = c(0.08, 0.08), color = "white", size = 0.5) +
@@ -413,7 +447,7 @@ layout <- "A#B"
 
 #assemble multipanel figure based on layout
 Figure_scalebars <- panel_NOS2d_HCR + panel_NIT_HCR +
-  plot_layout(design = layout, widths = c(1, 0.01, 1)) +
+  plot_layout(design = layout, widths = c(1, 0.01, 1)) + # to introduce a gap, add an extra vector value which can be used as a spacer
   plot_annotation(tag_levels = 'A') & 
   theme(plot.tag = element_text(size = 12, face='plain'))
 
@@ -478,6 +512,9 @@ ggsave(
 
 image_read("manuscript/figures/Figure_scalebars_gap.png")
 
+# magick package also has read tiff function.
+
+
 # More complex figure layouts --------------
 
 #read images and make annotated panel
@@ -511,11 +548,11 @@ Figure_complex <- panel_Platy + panel_FVRI +  panel_NOS +
 ggsave(
   "manuscript/figures/Figure_complex.png",
   units = c("px"), Figure_complex, 
-  width = 2600, height = 1700, bg = "white"
+  width = 2600, height = 1700, bg = "white"  # bg is background, can be used to change background color 
   )
 
 image_read("manuscript/figures/Figure_complex.png")
-
+Figure_complex
 
 # Image saved with defined resolution (dpi) -------------------------------
 
